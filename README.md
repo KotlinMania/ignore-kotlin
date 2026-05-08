@@ -568,7 +568,7 @@ are unofficially maintained and may not be up to date.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:ignore-kotlin:0.1.0-SNAPSHOT")
+    implementation("io.github.kotlinmania:ignore-kotlin:0.1.0")
 }
 ```
 

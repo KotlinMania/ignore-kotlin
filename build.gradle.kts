@@ -400,7 +400,7 @@ val codeqlCompileJvm = tasks.register<JavaExec>("codeqlCompileJvm") {
                 listOf(sentinelFile)
             } else {
                 realSourceFiles
-        }
+            }
         args = listOf(
             "-d", outDir.get().asFile.absolutePath,
             "-classpath", fullClasspath,

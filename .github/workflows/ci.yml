@@ -50,6 +50,10 @@ jobs:
     uses: ./.github/workflows/android.yml
     permissions:
       contents: read
+  android-native:
+    uses: ./.github/workflows/android-native.yml
+    permissions:
+      contents: read
   linux:
     uses: ./.github/workflows/linux.yml
     permissions:

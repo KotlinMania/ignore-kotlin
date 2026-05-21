@@ -243,6 +243,11 @@ kotlin {
     linuxArm64()
     mingwX64()
 
+    androidNativeArm32()
+    androidNativeArm64()
+    androidNativeX86()
+    androidNativeX64()
+
     js {
         browser()
         nodejs()

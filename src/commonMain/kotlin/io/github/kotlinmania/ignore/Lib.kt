@@ -1,46 +1,46 @@
 // port-lint: source src/lib.rs
 package io.github.kotlinmania.ignore
 
-/*!
-The ignore library provides a fast recursive directory iterator that respects
-various filters such as globs, file types and `.gitignore` files. The precise
-matching rules and precedence is explained in the documentation for
-[WalkBuilder].
-
-Secondarily, this library exposes gitignore and file type matchers for use
-cases that demand more fine-grained control.
-
-# Example
-
-This example shows the most basic usage of this library. This code will
-recursively traverse the current directory while automatically filtering out
-files and directories according to ignore globs found in files like
-`.ignore` and `.gitignore`:
-
-```kotlin
-for (result in Walk("./")) {
-    // Each item yielded by the iterator is either a directory entry or an
-    // error, so either print the path or the error.
-    result.fold(
-        onSuccess = { entry -> println(entry.path()) },
-        onFailure = { err -> println("ERROR: $err") },
-    )
-}
-```
-
-# Example: advanced
-
-By default, the recursive directory iterator will ignore hidden files and
-directories. This can be disabled by building the iterator with [WalkBuilder]:
-
-```kotlin
-for (result in WalkBuilder("./").hidden(false).build()) {
-    println(result)
-}
-```
-
-See the documentation for [WalkBuilder] for many other options.
-*/
+/**
+ * The ignore library provides a fast recursive directory iterator that respects
+ * various filters such as globs, file types and `.gitignore` files. The precise
+ * matching rules and precedence is explained in the documentation for
+ * [WalkBuilder].
+ *
+ * Secondarily, this library exposes gitignore and file type matchers for use
+ * cases that demand more fine-grained control.
+ *
+ * Example:
+ *
+ * This example shows the most basic usage of this library. This code will
+ * recursively traverse the current directory while automatically filtering out
+ * files and directories according to ignore globs found in files like
+ * `.ignore` and `.gitignore`:
+ *
+ * ```kotlin
+ * for (result in Walk("./")) {
+ *     // Each item yielded by the iterator is either a directory entry or an
+ *     // error, so either print the path or the error.
+ *     result.fold(
+ *         onSuccess = { entry -> println(entry.path()) },
+ *         onFailure = { err -> println("ERROR: $err") },
+ *     )
+ * }
+ * ```
+ *
+ * Example: advanced
+ *
+ * By default, the recursive directory iterator will ignore hidden files and
+ * directories. This can be disabled by building the iterator with [WalkBuilder]:
+ *
+ * ```kotlin
+ * for (result in WalkBuilder("./").hidden(false).build()) {
+ *     println(result)
+ * }
+ * ```
+ *
+ * See the documentation for [WalkBuilder] for many other options.
+ */
 
 /**
  * Represents an error that can occur when parsing a gitignore file.

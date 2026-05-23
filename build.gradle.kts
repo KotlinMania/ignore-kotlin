@@ -213,10 +213,18 @@ kotlin {
         binaries.framework { baseName = "Ignore"; xcf.add(this) }
     }
     iosSimulatorArm64 {
-        binaries.framework { baseName = "Ignore"; xcf.add(this) }
+        binaries.framework {
+            baseName = "Ignore"
+            isStatic = true
+            xcf.add(this)
+        }
     }
     iosX64 {
-        binaries.framework { baseName = "Ignore"; xcf.add(this) }
+        binaries.framework {
+            baseName = "Ignore"
+            isStatic = true
+            xcf.add(this)
+        }
     }
 
     tvosArm64 {

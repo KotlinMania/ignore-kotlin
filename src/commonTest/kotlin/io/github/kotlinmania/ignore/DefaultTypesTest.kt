@@ -1,4 +1,4 @@
-// port-lint: source src/default_types.rs
+// port-lint: source default_types.rs
 package io.github.kotlinmania.ignore
 
 import kotlin.test.Test

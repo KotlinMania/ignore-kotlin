@@ -103,9 +103,16 @@ jobs:
       - name: Run manual build steps
         if: matrix.build-mode == 'manual'
         run: |
+          ./gradlew --stop
           export JAVA_TOOL_OPTIONS="-javaagent:${CODEQL_EXTRACTOR_JAVA_ROOT}/tools/codeql-java-agent.jar=java,kotlin"
           echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS}"
-          ./gradlew --no-daemon setupAndroidSdk codeqlCompileJvm --no-configuration-cache
+          ./gradlew \
+            --no-daemon \
+            --rerun-tasks \
+            --no-build-cache \
+            setupAndroidSdk \
+            codeqlCompileJvm \
+            --no-configuration-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

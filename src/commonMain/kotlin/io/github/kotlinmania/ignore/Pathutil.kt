@@ -1,5 +1,15 @@
-// port-lint: source src/pathutil.rs
+// port-lint: source pathutil.rs
 package io.github.kotlinmania.ignore
+
+/** Returns true if and only if this path is considered to be hidden.
+ *
+ * This only returns true if the base name of the path starts with a `.`.
+ *
+ * @param path The entry path to inspect. */
+internal fun isHidden(path: String): Boolean {
+    val name = fileName(path) ?: return false
+    return name.startsWith(".")
+}
 
 /** Strip [prefix] from the [path] and return the remainder.
  *
@@ -27,7 +37,7 @@ internal fun isFileName(path: String): Boolean {
 internal fun fileName(path: String): String? {
     if (path.isEmpty()) return null
     if (path == ".") return null
-    if (path.endsWith('.') && path.length > 1 && (path[path.length - 2] == '/' || path[path.length - 2] == '\\')) return null
+    if (path.endsWith('.')) return null
     if (path.endsWith("..")) return null
 
     val lastSlash = path.lastIndexOf('/')

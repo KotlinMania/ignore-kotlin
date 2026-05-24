@@ -1,5 +1,9 @@
 // port-lint: source lib.rs
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.ignore
+
+import kotlin.native.HiddenFromObjC
 
 /**
  * The ignore library provides a fast recursive directory iterator that respects
@@ -45,12 +49,15 @@ package io.github.kotlinmania.ignore
 /**
  * Represents an error that can occur when parsing a gitignore file.
  */
+@HiddenFromObjC
 sealed class Error : kotlin.Exception() {
     /** A collection of "soft" errors. These occur when adding an ignore
      * file partially succeeded. */
+    @HiddenFromObjC
     data class Partial(val errors: List<Error>) : Error()
 
     /** An error associated with a specific line number. */
+    @HiddenFromObjC
     data class WithLineNumber(
         /** The line number. */
         val line: Long,
@@ -59,6 +66,7 @@ sealed class Error : kotlin.Exception() {
     ) : Error()
 
     /** An error associated with a particular file path. */
+    @HiddenFromObjC
     data class WithPath(
         /** The file path. */
         val path: String,
@@ -68,6 +76,7 @@ sealed class Error : kotlin.Exception() {
 
     /** An error associated with a particular directory depth when recursively
      * walking a directory. */
+    @HiddenFromObjC
     data class WithDepth(
         /** The directory depth. */
         val depth: Int,
@@ -77,6 +86,7 @@ sealed class Error : kotlin.Exception() {
 
     /** An error that occurs when a file loop is detected when traversing
      * symbolic links. */
+    @HiddenFromObjC
     data class Loop(
         /** The ancestor file path in the loop. */
         val ancestor: String,
@@ -85,6 +95,7 @@ sealed class Error : kotlin.Exception() {
     ) : Error()
 
     /** An error that occurs when doing I/O, such as reading an ignore file. */
+    @HiddenFromObjC
     data class Io(val err: Exception) : Error()
 
     /** An error that occurs when trying to parse a glob.
@@ -95,6 +106,7 @@ sealed class Error : kotlin.Exception() {
      *
      * (This glob may be distinct from the glob that is actually compiled,
      * after accounting for `gitignore` semantics.) */
+    @HiddenFromObjC
     data class Glob(
         /** The original glob that caused this error, if available. */
         val glob: String?,
@@ -103,9 +115,11 @@ sealed class Error : kotlin.Exception() {
     ) : Error()
 
     /** A type selection for a file type that is not defined. */
+    @HiddenFromObjC
     data class UnrecognizedFileType(val type: String) : Error()
 
     /** A user specified file type definition could not be parsed. */
+    @HiddenFromObjC
     object InvalidDefinition : Error()
 
     /** Returns true if this is a partial error.
@@ -139,6 +153,7 @@ sealed class Error : kotlin.Exception() {
      * [null] is returned if this [Error] doesn't correspond to an I/O error.
      * This might happen, for example, when the error was produced because a
      * cycle was found in the directory tree while following symbolic links. */
+    @HiddenFromObjC
     fun ioError(): Exception? = when (this) {
         is Partial -> if (errors.size == 1) errors[0].ioError() else null
         is WithLineNumber -> err.ioError()
@@ -152,6 +167,7 @@ sealed class Error : kotlin.Exception() {
     }
 
     /** Similar to [ioError] except returns null when no I/O error exists. */
+    @HiddenFromObjC
     fun intoIoError(): Exception? = ioError()
 
     /** Returns a depth associated with recursively walking a directory (if
@@ -198,16 +214,20 @@ sealed class Error : kotlin.Exception() {
  * information about a particular match. For example, it might identify
  * the specific gitignore file and the specific glob pattern that caused
  * the match. */
+@HiddenFromObjC
 sealed class Match<out T> {
     /** The path didn't match any glob. */
+    @HiddenFromObjC
     object None : Match<Nothing>()
 
     /** The highest precedent glob matched indicates the path should be
      * ignored. */
+    @HiddenFromObjC
     data class Ignore<out T>(val value: T) : Match<T>()
 
     /** The highest precedent glob matched indicates the path should be
      * whitelisted. */
+    @HiddenFromObjC
     data class Whitelist<out T>(val value: T) : Match<T>()
 
     /** Returns true if the match result didn't match any globs. */
@@ -238,6 +258,7 @@ sealed class Match<out T> {
     /** Apply the given function to the value inside this match.
      *
      * If the match has no value, then return the match unchanged. */
+    @HiddenFromObjC
     fun <U> map(f: (T) -> U): Match<U> = when (this) {
         is None -> None
         is Ignore -> Ignore(f(value))

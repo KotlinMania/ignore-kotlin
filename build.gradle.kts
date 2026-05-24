@@ -28,7 +28,7 @@ plugins {
 }
 
 group = "io.github.kotlinmania"
-version = "0.1.0"
+version = "0.1.1"
 
 val androidCommandLineToolsRevision = "14742923"
 val projectCompileSdk = "34"
@@ -538,22 +538,66 @@ tasks.register("setupAndroidSdk") {
     }
 }
 
+val swiftTestBuildDir = layout.buildDirectory.dir("swift-test")
+val swiftDeploymentTargetSettingName = "MACOSX_DEPLOYMENT_TARGET"
+val swiftExportTestEnvironment = mapOf(
+    "BUILT_PRODUCTS_DIR" to swiftTestBuildDir.get().asFile.absolutePath,
+    "TARGET_BUILD_DIR" to swiftTestBuildDir.get().asFile.absolutePath,
+    "SDK_NAME" to "macosx",
+    "CONFIGURATION" to "Debug",
+    "ARCHS" to "arm64",
+    "FRAMEWORKS_FOLDER_PATH" to "Frameworks",
+    swiftDeploymentTargetSettingName to "14.0",
+    "DEPLOYMENT_TARGET_SETTING_NAME" to swiftDeploymentTargetSettingName,
+)
+
+val swiftExportForTest = tasks.register<Exec>("swiftExportForTest") {
+    group = "verification"
+    description = "Builds the Kotlin Swift Export package for swiftPackageTest."
+
+    commandLine(
+        layout.projectDirectory.file(if (isWindowsHost) "gradlew.bat" else "gradlew").asFile.absolutePath,
+        "embedSwiftExportForXcode",
+        "--rerun-tasks",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--no-daemon",
+    )
+    environment(swiftExportTestEnvironment)
+}
+
+val swiftPackageTest = tasks.register<Exec>("swiftPackageTest") {
+    group = "verification"
+    description = "Runs swift test against the Kotlin Swift Export package."
+
+    dependsOn(swiftExportForTest)
+    workingDir(layout.projectDirectory.dir("swift-test-harness"))
+    commandLine("swift", "test")
+}
+
+val hostPortableTestTasks = listOf(
+    "macosArm64Test",
+    "jvmTest",
+    "jsNodeTest",
+    "wasmJsNodeTest",
+    "compileAndroidMain",
+    "assembleUnitTest",
+)
+
+val hostPortableTestTaskDependencies =
+    hostPortableTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) }
+
+swiftPackageTest.configure {
+    mustRunAfter(hostPortableTestTaskDependencies)
+}
+
 tasks.register("test") {
     group = "verification"
     description =
-        "Runs the host-portable test suite (macOS + JS + WasmJS + Android unit). " +
+        "Runs the host-portable test suite (macOS + JS + WasmJS + Android unit + Swift export). " +
         "Non-host native targets (mingwX64, linuxX64) only run on their own host."
 
-    val defaultTestTasks = listOf(
-        "macosArm64Test",
-        "jvmTest",
-        "jsNodeTest",
-        "wasmJsNodeTest",
-        "compileAndroidMain",
-        "assembleUnitTest",
-    )
-
-    dependsOn(defaultTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) })
+    dependsOn(hostPortableTestTaskDependencies, swiftPackageTest)
 }
 
 // The generated Wasm-WASI Node test runner cannot see the filesystem unless
@@ -687,6 +731,7 @@ val fullTargetBuildTasks = listOf(
     "watchosSimulatorArm64Binaries",
     "watchosSimulatorArm64TestBinaries",
     "embedSwiftExportForXcode",
+    "swiftPackageTest",
     "assembleIgnoreXCFramework",
     "assembleIgnoreDebugXCFramework",
     "assembleIgnoreReleaseXCFramework",

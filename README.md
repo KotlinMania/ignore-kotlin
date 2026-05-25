@@ -478,7 +478,6 @@ the latest stable release of the Rust compiler.
 To build ripgrep:
 
 ```
-$ git clone https://github.com/BurntSushi/ripgrep
 $ cd ripgrep
 $ cargo build --release
 $ ./target/release/rg --version

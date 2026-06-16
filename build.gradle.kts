@@ -294,7 +294,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.5.0")
                 implementation("io.github.kotlinmania:km-io:0.1.5")
             }
         }
@@ -449,7 +449,7 @@ dependencies {
     codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0")
     codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0")
     codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.8.0")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.4.0")
+    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.5.0")
     codeqlSourceClasspath("io.github.kotlinmania:km-io-jvm:0.1.5")
 }
 

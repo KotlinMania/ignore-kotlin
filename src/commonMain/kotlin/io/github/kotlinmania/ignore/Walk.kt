@@ -80,7 +80,9 @@ private fun FileMetadata.toIgnoreMetadata(): IgnoreMetadata =
 
 /** WalkBuilder builds a recursive directory iterator. */
 @HiddenFromObjC
-class WalkBuilder(path: String) {
+class WalkBuilder(
+    path: String,
+) {
     private val paths = mutableListOf(path)
     private val ignoreBuilder = IgnoreBuilder()
     private var maxDepth: Int? = null
@@ -92,15 +94,16 @@ class WalkBuilder(path: String) {
     private var filter: ((DirEntry) -> Boolean)? = null
 
     /** Build a new [Walk] iterator. */
-    fun build(): Walk = Walk(
-        paths = paths.toList(),
-        ignore = ignoreBuilder.build(""),
-        maxDepth = maxDepth,
-        minDepth = minDepth,
-        maxFilesize = maxFilesize,
-        sorter = sorter,
-        filter = filter,
-    )
+    fun build(): Walk =
+        Walk(
+            paths = paths.toList(),
+            ignore = ignoreBuilder.build(""),
+            maxDepth = maxDepth,
+            minDepth = minDepth,
+            maxFilesize = maxFilesize,
+            sorter = sorter,
+            filter = filter,
+        )
 
     /** Build a new [WalkParallel] iterator. */
     fun buildParallel(): WalkParallel = WalkParallel(build(), threads)
@@ -173,7 +176,12 @@ class WalkBuilder(path: String) {
 
     /** Enables all the standard ignore filters. */
     fun standardFilters(yes: Boolean): WalkBuilder =
-        hidden(yes).parents(yes).ignore(yes).gitIgnore(yes).gitGlobal(yes).gitExclude(yes)
+        hidden(yes)
+            .parents(yes)
+            .ignore(yes)
+            .gitIgnore(yes)
+            .gitGlobal(yes)
+            .gitExclude(yes)
 
     /** Enables ignoring hidden files. */
     fun hidden(yes: Boolean): WalkBuilder {
@@ -265,8 +273,9 @@ class Walk internal constructor(
         paths.asSequence().flatMap { walkPath(it, 0, ignore).asSequence() }.iterator()
 
     private fun walkPath(path: String, depth: Int, activeIgnore: Ignore): List<Result<DirEntry>> {
-        val metadata = SystemFileSystem.metadataOrNull(Path(path))
-            ?: return listOf(Result.failure(Error.Io(Exception("No such file or directory: $path"))))
+        val metadata =
+            SystemFileSystem.metadataOrNull(Path(path))
+                ?: return listOf(Result.failure(Error.Io(Exception("No such file or directory: $path"))))
         val entry = DirEntry(path, metadata.toIgnoreMetadata().fileType, depth)
         val minAllows = minDepth?.let { depth >= it } ?: true
         val output = mutableListOf<Result<DirEntry>>()
@@ -279,14 +288,15 @@ class Walk internal constructor(
         }
         if (ignored || filtered || !entry.fileType().isDir) return output
         if (maxDepth?.let { depth >= it } == true) return output
-        val children = try {
-            SystemFileSystem.list(Path(path)).map { it.toString() }
-        } catch (err: Exception) {
-            output += Result.failure(Error.Io(err).withPath(path).withDepth(depth))
-            return output
-        }.let { childPaths ->
-            sorter?.let { childPaths.sortedWith(it) } ?: childPaths
-        }
+        val children =
+            try {
+                SystemFileSystem.list(Path(path)).map { it.toString() }
+            } catch (err: Exception) {
+                output += Result.failure(Error.Io(err).withPath(path).withDepth(depth))
+                return output
+            }.let { childPaths ->
+                sorter?.let { childPaths.sortedWith(it) } ?: childPaths
+            }
         val childIgnore = activeIgnore.child(path)
         for (child in children) {
             output += walkPath(child, depth + 1, childIgnore)
@@ -321,7 +331,8 @@ class WalkParallel internal constructor(
         for (entry in walk) {
             when (visitor(entry)) {
                 WalkState.Continue,
-                WalkState.Skip -> Unit
+                WalkState.Skip,
+                -> Unit
                 WalkState.Quit -> return
             }
         }

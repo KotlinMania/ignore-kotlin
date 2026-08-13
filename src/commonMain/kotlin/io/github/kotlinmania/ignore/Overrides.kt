@@ -30,13 +30,16 @@ class OverrideGlob internal constructor(
 
     internal companion object {
         fun unmatched(): OverrideGlob = OverrideGlob(true, null)
+
         fun matched(glob: Glob): OverrideGlob = OverrideGlob(false, glob)
     }
 }
 
 /** Manages a set of overrides provided explicitly by the end user. */
 @HiddenFromObjC
-class Override internal constructor(private val gitignore: Gitignore) {
+class Override internal constructor(
+    private val gitignore: Gitignore,
+) {
     /** Returns the directory of this override set. */
     fun path(): String = gitignore.path()
 
@@ -67,7 +70,9 @@ class Override internal constructor(private val gitignore: Gitignore) {
 
 /** Builds a matcher for a set of glob overrides. */
 @HiddenFromObjC
-class OverrideBuilder(path: String) {
+class OverrideBuilder(
+    path: String,
+) {
     private val builder = GitignoreBuilder(path).allowUnclosedClass(false)
 
     /** Builds a new override matcher from the globs added so far. */

@@ -51,10 +51,11 @@ class OverridesTest {
 
     @Test
     fun caseInsensitive() {
-        val ov = OverrideBuilder("/home/andrew/foo")
-            .caseInsensitive(true)
-            .add("*.html")
-            .build()
+        val ov =
+            OverrideBuilder("/home/andrew/foo")
+                .caseInsensitive(true)
+                .add("*.html")
+                .build()
         assertTrue(ov.matched("foo.html", false).isWhitelist())
         assertTrue(ov.matched("foo.HTML", false).isWhitelist())
         assertTrue(ov.matched("foo.htm", false).isIgnore())

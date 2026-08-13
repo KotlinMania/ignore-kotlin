@@ -64,10 +64,11 @@ class GitignoreTest {
 
     @Test
     fun caseSensitivityCanBeDisabled() {
-        val gi = GitignoreBuilder(ROOT)
-            .caseInsensitive(true)
-            .addStr(null, "*.html")
-            .build()
+        val gi =
+            GitignoreBuilder(ROOT)
+                .caseInsensitive(true)
+                .addStr(null, "*.html")
+                .build()
 
         assertTrue(gi.matched("foo.html", isDir = false).isIgnore())
         assertTrue(gi.matched("foo.HTML", isDir = false).isIgnore())

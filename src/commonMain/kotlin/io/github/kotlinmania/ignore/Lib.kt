@@ -54,7 +54,9 @@ sealed class Error : kotlin.Exception() {
     /** A collection of "soft" errors. These occur when adding an ignore
      * file partially succeeded. */
     @HiddenFromObjC
-    data class Partial(val errors: List<Error>) : Error()
+    data class Partial(
+        val errors: List<Error>,
+    ) : Error()
 
     /** An error associated with a specific line number. */
     @HiddenFromObjC
@@ -96,7 +98,9 @@ sealed class Error : kotlin.Exception() {
 
     /** An error that occurs when doing I/O, such as reading an ignore file. */
     @HiddenFromObjC
-    data class Io(val err: Exception) : Error()
+    data class Io(
+        val err: Exception,
+    ) : Error()
 
     /** An error that occurs when trying to parse a glob.
      *
@@ -116,7 +120,9 @@ sealed class Error : kotlin.Exception() {
 
     /** A type selection for a file type that is not defined. */
     @HiddenFromObjC
-    data class UnrecognizedFileType(val type: String) : Error()
+    data class UnrecognizedFileType(
+        val type: String,
+    ) : Error()
 
     /** A user specified file type definition could not be parsed. */
     @HiddenFromObjC
@@ -127,26 +133,28 @@ sealed class Error : kotlin.Exception() {
      * A partial error occurs when only some operations failed while others
      * may have succeeded. For example, an ignore file may contain an invalid
      * glob among otherwise valid globs. */
-    fun isPartial(): Boolean = when (this) {
-        is Partial -> true
-        is WithLineNumber -> err.isPartial()
-        is WithPath -> err.isPartial()
-        is WithDepth -> err.isPartial()
-        else -> false
-    }
+    fun isPartial(): Boolean =
+        when (this) {
+            is Partial -> true
+            is WithLineNumber -> err.isPartial()
+            is WithPath -> err.isPartial()
+            is WithDepth -> err.isPartial()
+            else -> false
+        }
 
     /** Returns true if this error is exclusively an I/O error. */
-    fun isIo(): Boolean = when (this) {
-        is Partial -> errors.size == 1 && errors[0].isIo()
-        is WithLineNumber -> err.isIo()
-        is WithPath -> err.isIo()
-        is WithDepth -> err.isIo()
-        is Loop -> false
-        is Io -> true
-        is Glob -> false
-        is UnrecognizedFileType -> false
-        is InvalidDefinition -> false
-    }
+    fun isIo(): Boolean =
+        when (this) {
+            is Partial -> errors.size == 1 && errors[0].isIo()
+            is WithLineNumber -> err.isIo()
+            is WithPath -> err.isIo()
+            is WithDepth -> err.isIo()
+            is Loop -> false
+            is Io -> true
+            is Glob -> false
+            is UnrecognizedFileType -> false
+            is InvalidDefinition -> false
+        }
 
     /** Inspect the original [Exception] if there is one.
      *
@@ -154,17 +162,18 @@ sealed class Error : kotlin.Exception() {
      * This might happen, for example, when the error was produced because a
      * cycle was found in the directory tree while following symbolic links. */
     @HiddenFromObjC
-    fun ioError(): Exception? = when (this) {
-        is Partial -> if (errors.size == 1) errors[0].ioError() else null
-        is WithLineNumber -> err.ioError()
-        is WithPath -> err.ioError()
-        is WithDepth -> err.ioError()
-        is Loop -> null
-        is Io -> err
-        is Glob -> null
-        is UnrecognizedFileType -> null
-        is InvalidDefinition -> null
-    }
+    fun ioError(): Exception? =
+        when (this) {
+            is Partial -> if (errors.size == 1) errors[0].ioError() else null
+            is WithLineNumber -> err.ioError()
+            is WithPath -> err.ioError()
+            is WithDepth -> err.ioError()
+            is Loop -> null
+            is Io -> err
+            is Glob -> null
+            is UnrecognizedFileType -> null
+            is InvalidDefinition -> null
+        }
 
     /** Similar to [ioError] except returns null when no I/O error exists. */
     @HiddenFromObjC
@@ -172,11 +181,12 @@ sealed class Error : kotlin.Exception() {
 
     /** Returns a depth associated with recursively walking a directory (if
      * this error was generated from a recursive directory iterator). */
-    fun depth(): Int? = when (this) {
-        is WithPath -> err.depth()
-        is WithDepth -> depth
-        else -> null
-    }
+    fun depth(): Int? =
+        when (this) {
+            is WithPath -> err.depth()
+            is WithDepth -> depth
+            else -> null
+        }
 
     /** Turn an error into a tagged error with the given file path. */
     internal fun withPath(path: String): Error = WithPath(path, this)
@@ -191,21 +201,23 @@ sealed class Error : kotlin.Exception() {
         return if (path.isEmpty()) errLine else errLine.withPath(path)
     }
 
-    override fun toString(): String = when (this) {
-        is Partial -> errors.joinToString("\n")
-        is WithLineNumber -> "line $line: $err"
-        is WithPath -> "$path: $err"
-        is WithDepth -> err.toString()
-        is Loop -> "File system loop found: $child points to an ancestor $ancestor"
-        is Io -> err.toString()
-        is Glob -> when (glob) {
-            null -> err
-            else -> "error parsing glob '$glob': $err"
+    override fun toString(): String =
+        when (this) {
+            is Partial -> errors.joinToString("\n")
+            is WithLineNumber -> "line $line: $err"
+            is WithPath -> "$path: $err"
+            is WithDepth -> err.toString()
+            is Loop -> "File system loop found: $child points to an ancestor $ancestor"
+            is Io -> err.toString()
+            is Glob ->
+                when (glob) {
+                    null -> err
+                    else -> "error parsing glob '$glob': $err"
+                }
+            is UnrecognizedFileType -> "unrecognized file type: $type"
+            is InvalidDefinition ->
+                "invalid definition (format is type:glob, e.g., html:*.html)"
         }
-        is UnrecognizedFileType -> "unrecognized file type: $type"
-        is InvalidDefinition ->
-            "invalid definition (format is type:glob, e.g., html:*.html)"
-    }
 }
 
 /** The result of a glob match.
@@ -223,12 +235,16 @@ sealed class Match<out T> {
     /** The highest precedent glob matched indicates the path should be
      * ignored. */
     @HiddenFromObjC
-    data class Ignore<out T>(val value: T) : Match<T>()
+    data class Ignore<out T>(
+        val value: T,
+    ) : Match<T>()
 
     /** The highest precedent glob matched indicates the path should be
      * whitelisted. */
     @HiddenFromObjC
-    data class Whitelist<out T>(val value: T) : Match<T>()
+    data class Whitelist<out T>(
+        val value: T,
+    ) : Match<T>()
 
     /** Returns true if the match result didn't match any globs. */
     fun isNone(): Boolean = this is None
@@ -242,28 +258,31 @@ sealed class Match<out T> {
 
     /** Inverts the match so that [Ignore] becomes [Whitelist] and
      * [Whitelist] becomes [Ignore]. A non-match remains the same. */
-    fun invert(): Match<T> = when (this) {
-        is None -> None
-        is Ignore -> Whitelist(value)
-        is Whitelist -> Ignore(value)
-    }
+    fun invert(): Match<T> =
+        when (this) {
+            is None -> None
+            is Ignore -> Whitelist(value)
+            is Whitelist -> Ignore(value)
+        }
 
     /** Return the value inside this match if it exists. */
-    fun inner(): T? = when (this) {
-        is None -> null
-        is Ignore -> value
-        is Whitelist -> value
-    }
+    fun inner(): T? =
+        when (this) {
+            is None -> null
+            is Ignore -> value
+            is Whitelist -> value
+        }
 
     /** Apply the given function to the value inside this match.
      *
      * If the match has no value, then return the match unchanged. */
     @HiddenFromObjC
-    fun <U> map(f: (T) -> U): Match<U> = when (this) {
-        is None -> None
-        is Ignore -> Ignore(f(value))
-        is Whitelist -> Whitelist(f(value))
-    }
+    fun <U> map(f: (T) -> U): Match<U> =
+        when (this) {
+            is None -> None
+            is Ignore -> Ignore(f(value))
+            is Whitelist -> Whitelist(f(value))
+        }
 
     /** Return the match if it is not none. Otherwise, return [other]. */
     fun or(other: Match<@UnsafeVariance T>): Match<T> =
@@ -289,9 +308,10 @@ internal class PartialErrorBuilder {
         if (err != null) pushIgnoreIo(err)
     }
 
-    fun intoErrorOption(): Error? = when {
-        errors.isEmpty() -> null
-        errors.size == 1 -> errors.removeAt(0)
-        else -> Error.Partial(errors.toList())
-    }
+    fun intoErrorOption(): Error? =
+        when {
+            errors.isEmpty() -> null
+            errors.size == 1 -> errors.removeAt(0)
+            else -> Error.Partial(errors.toList())
+        }
 }

@@ -119,11 +119,12 @@ class Gitignore internal constructor(
         var result: Match<Glob> = Match.None
         for (compiled in globs) {
             if (compiled.matches(path, isDir)) {
-                result = if (compiled.glob.isWhitelist()) {
-                    Match.Whitelist(compiled.glob)
-                } else {
-                    Match.Ignore(compiled.glob)
-                }
+                result =
+                    if (compiled.glob.isWhitelist()) {
+                        Match.Whitelist(compiled.glob)
+                    } else {
+                        Match.Ignore(compiled.glob)
+                    }
             }
         }
         return result
@@ -152,7 +153,9 @@ class Gitignore internal constructor(
 
 /** Builds a gitignore matcher from lines or explicit glob patterns. */
 @HiddenFromObjC
-class GitignoreBuilder(path: String) {
+class GitignoreBuilder(
+    path: String,
+) {
     private val root = normalizePath(path)
     private val globs = mutableListOf<CompiledIgnoreGlob>()
     private var caseInsensitive = false
@@ -173,24 +176,26 @@ class GitignoreBuilder(path: String) {
     /** Add a single gitignore-style line. */
     fun addLine(from: String?, line: String): GitignoreBuilder {
         val parsed = parseIgnoreLine(line) ?: return this
-        val glob = Glob(
-            fromValue = from,
-            originalValue = parsed.original,
-            actualValue = parsed.actual,
-            whitelist = parsed.whitelist,
-            onlyDir = parsed.onlyDir,
-        )
+        val glob =
+            Glob(
+                fromValue = from,
+                originalValue = parsed.original,
+                actualValue = parsed.actual,
+                whitelist = parsed.whitelist,
+                onlyDir = parsed.onlyDir,
+            )
         globs += CompiledIgnoreGlob(glob, parsed, caseInsensitive, allowUnclosedClass)
         return this
     }
 
     /** Add each glob from the file path given. */
     fun add(path: String): Error? {
-        val contents = try {
-            SystemFileSystem.source(Path(path)).buffered().use { source -> source.readString() }
-        } catch (err: Exception) {
-            return Error.Io(err).withPath(path)
-        }
+        val contents =
+            try {
+                SystemFileSystem.source(Path(path)).buffered().use { source -> source.readString() }
+            } catch (err: Exception) {
+                return Error.Io(err).withPath(path)
+            }
         var error: Error? = null
         for ((index, rawLine) in contents.lines().withIndex()) {
             val line = if (index == 0) rawLine.removePrefix("\uFEFF") else rawLine
@@ -214,13 +219,14 @@ class GitignoreBuilder(path: String) {
     /** Add a single override-style line. */
     internal fun addOverrideLine(line: String): GitignoreBuilder {
         val parsed = parseIgnoreLine(line) ?: return this
-        val glob = Glob(
-            fromValue = null,
-            originalValue = parsed.original,
-            actualValue = parsed.actual,
-            whitelist = parsed.whitelist,
-            onlyDir = parsed.onlyDir,
-        )
+        val glob =
+            Glob(
+                fromValue = null,
+                originalValue = parsed.original,
+                actualValue = parsed.actual,
+                whitelist = parsed.whitelist,
+                onlyDir = parsed.onlyDir,
+            )
         globs += CompiledIgnoreGlob(glob, parsed, caseInsensitive, allowUnclosedClass)
         return this
     }
@@ -248,15 +254,17 @@ internal class CompiledIgnoreGlob(
         if (parsed.onlyDir && !isDir) return false
         val normalizedPath = normalizePath(path).trimStart('/')
         val pattern = parsed.actual.trimStart('/')
-        val candidates = buildList {
-            add(normalizedPath)
-            fileName(normalizedPath)?.let { add(it) }
-        }
-        val selected = when {
-            parsed.anchored -> listOf(normalizedPath)
-            parsed.basenameOnly -> candidates
-            else -> listOf(normalizedPath)
-        }
+        val candidates =
+            buildList {
+                add(normalizedPath)
+                fileName(normalizedPath)?.let { add(it) }
+            }
+        val selected =
+            when {
+                parsed.anchored -> listOf(normalizedPath)
+                parsed.basenameOnly -> candidates
+                else -> listOf(normalizedPath)
+            }
         return selected.any { globMatches(pattern, it, caseInsensitive, allowUnclosedClass) }
     }
 }
@@ -340,13 +348,14 @@ private fun hasDoublestarPrefix(glob: String): Boolean =
     glob.startsWith("**/") || glob == "**"
 
 private fun globMatches(pattern: String, candidate: String, caseInsensitive: Boolean, allowUnclosedClass: Boolean): Boolean {
-    val regex = buildString {
-        append("^")
-        append(globToRegex(pattern, allowUnclosedClass))
-        append("$")
-    }.let {
-        if (caseInsensitive) Regex(it, RegexOption.IGNORE_CASE) else Regex(it)
-    }
+    val regex =
+        buildString {
+            append("^")
+            append(globToRegex(pattern, allowUnclosedClass))
+            append("$")
+        }.let {
+            if (caseInsensitive) Regex(it, RegexOption.IGNORE_CASE) else Regex(it)
+        }
     return regex.matches(candidate)
 }
 

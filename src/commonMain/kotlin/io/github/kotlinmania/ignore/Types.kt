@@ -78,7 +78,9 @@ class Types internal constructor(
 
 /** Information about the file type decision that was made. */
 @HiddenFromObjC
-class FileTypeGlob internal constructor(private val def: FileTypeDef?) {
+class FileTypeGlob internal constructor(
+    private val def: FileTypeDef?,
+) {
     /** Return the file type definition that matched, if one exists. */
     fun fileTypeDef(): FileTypeDef? = def
 
@@ -90,27 +92,43 @@ class FileTypeGlob internal constructor(private val def: FileTypeDef?) {
 
     internal companion object {
         fun unmatched(): FileTypeGlob = FileTypeGlob(null)
+
         fun matched(def: FileTypeDef): FileTypeGlob = FileTypeGlob(def)
     }
 }
 
 internal sealed class TypeSelection<T> {
     abstract fun isNegated(): Boolean
+
     abstract fun name(): String
+
     abstract fun inner(): T
+
     abstract fun <U> map(transform: (T) -> U): TypeSelection<U>
 
-    class Select<T>(private val nameValue: String, private val innerValue: T) : TypeSelection<T>() {
+    class Select<T>(
+        private val nameValue: String,
+        private val innerValue: T,
+    ) : TypeSelection<T>() {
         override fun isNegated(): Boolean = false
+
         override fun name(): String = nameValue
+
         override fun inner(): T = innerValue
+
         override fun <U> map(transform: (T) -> U): TypeSelection<U> = Select(nameValue, transform(innerValue))
     }
 
-    class Negate<T>(private val nameValue: String, private val innerValue: T) : TypeSelection<T>() {
+    class Negate<T>(
+        private val nameValue: String,
+        private val innerValue: T,
+    ) : TypeSelection<T>() {
         override fun isNegated(): Boolean = true
+
         override fun name(): String = nameValue
+
         override fun inner(): T = innerValue
+
         override fun <U> map(transform: (T) -> U): TypeSelection<U> = Negate(nameValue, transform(innerValue))
     }
 }
@@ -237,7 +255,8 @@ private fun expandBraceAlternatives(glob: String): List<String> {
     if (close < 0) return listOf(glob)
     val prefix = glob.substring(0, open)
     val suffix = glob.substring(close + 1)
-    return glob.substring(open + 1, close)
+    return glob
+        .substring(open + 1, close)
         .split(",")
         .flatMap { option -> expandBraceAlternatives(prefix + option + suffix) }
 }

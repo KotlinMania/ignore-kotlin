@@ -3,17 +3,18 @@ package io.github.kotlinmania.ignore
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TypesTest {
     @Test
     fun selectionsAndNegationsFollowPrecedence() {
-        val types = configuredTypes {
-            select("foo")
-            negate("rust")
-        }
+        val types =
+            configuredTypes {
+                select("foo")
+                negate("rust")
+            }
 
         assertTrue(types.matched("main.foo").isWhitelist())
         assertTrue(types.matched("main.rs").isIgnore())
@@ -30,9 +31,10 @@ class TypesTest {
 
     @Test
     fun includeDefinitionsReuseExistingGlobs() {
-        val types = configuredTypes {
-            select("combo")
-        }
+        val types =
+            configuredTypes {
+                select("combo")
+            }
 
         assertTrue(types.matched("index.html").isWhitelist())
         assertTrue(types.matched("lib.rs").isWhitelist())
@@ -41,9 +43,10 @@ class TypesTest {
 
     @Test
     fun negatedSelectionIgnoresOnlyItsType() {
-        val types = configuredTypes {
-            negate("rust")
-        }
+        val types =
+            configuredTypes {
+                negate("rust")
+            }
 
         assertTrue(types.matched("main.rs").isIgnore())
         assertTrue(types.matched("index.html").isNone())
@@ -51,9 +54,10 @@ class TypesTest {
 
     @Test
     fun allSelectionExpandsCurrentDefinitions() {
-        val types = configuredTypes {
-            select("all")
-        }
+        val types =
+            configuredTypes {
+                select("all")
+            }
 
         assertEquals(7, types.len())
         assertTrue(types.matched("index.htm").isWhitelist())
@@ -79,9 +83,10 @@ class TypesTest {
 
     @Test
     fun directoryEntriesDoNotUseFileTypeFilters() {
-        val types = configuredTypes {
-            select("rust")
-        }
+        val types =
+            configuredTypes {
+                select("rust")
+            }
 
         assertFalse(types.matched("lib.rs", isDir = true).isIgnore())
         assertTrue(types.matched("lib.rs", isDir = true).isNone())
@@ -98,14 +103,15 @@ class TypesTest {
         return builder
     }
 
-    private fun typeDefinitions(): List<String> = listOf(
-        "html:*.html",
-        "html:*.htm",
-        "rust:*.rs",
-        "js:*.js",
-        "py:*.py",
-        "python:*.py",
-        "foo:*.{rs,foo}",
-        "combo:include:html,rust",
-    )
+    private fun typeDefinitions(): List<String> =
+        listOf(
+            "html:*.html",
+            "html:*.htm",
+            "rust:*.rs",
+            "js:*.js",
+            "py:*.py",
+            "python:*.py",
+            "foo:*.{rs,foo}",
+            "combo:include:html,rust",
+        )
 }

@@ -9,7 +9,9 @@ import kotlin.native.HiddenFromObjC
 
 /** Information about where an ignore decision came from. */
 @HiddenFromObjC
-class IgnoreMatch internal constructor(private val source: IgnoreMatchSource) {
+class IgnoreMatch internal constructor(
+    private val source: IgnoreMatchSource,
+) {
     override fun equals(other: Any?): Boolean = other is IgnoreMatch && source == other.source
 
     override fun hashCode(): Int = source.hashCode()
@@ -18,16 +20,28 @@ class IgnoreMatch internal constructor(private val source: IgnoreMatchSource) {
 
     internal companion object {
         fun overrides(glob: OverrideGlob): IgnoreMatch = IgnoreMatch(IgnoreMatchSource.Override(glob))
+
         fun gitignore(glob: Glob): IgnoreMatch = IgnoreMatch(IgnoreMatchSource.Gitignore(glob))
+
         fun types(glob: FileTypeGlob): IgnoreMatch = IgnoreMatch(IgnoreMatchSource.Types(glob))
+
         fun hidden(): IgnoreMatch = IgnoreMatch(IgnoreMatchSource.Hidden)
     }
 }
 
 internal sealed class IgnoreMatchSource {
-    data class Override(val glob: OverrideGlob) : IgnoreMatchSource()
-    data class Gitignore(val glob: Glob) : IgnoreMatchSource()
-    data class Types(val glob: FileTypeGlob) : IgnoreMatchSource()
+    data class Override(
+        val glob: OverrideGlob,
+    ) : IgnoreMatchSource()
+
+    data class Gitignore(
+        val glob: Glob,
+    ) : IgnoreMatchSource()
+
+    data class Types(
+        val glob: FileTypeGlob,
+    ) : IgnoreMatchSource()
+
     object Hidden : IgnoreMatchSource()
 }
 
@@ -41,16 +55,17 @@ internal class IgnoreOptions(
     var ignoreCaseInsensitive: Boolean = false,
     var requireGit: Boolean = true,
 ) {
-    fun copy(): IgnoreOptions = IgnoreOptions(
-        hidden = hidden,
-        ignore = ignore,
-        parents = parents,
-        gitGlobal = gitGlobal,
-        gitIgnore = gitIgnore,
-        gitExclude = gitExclude,
-        ignoreCaseInsensitive = ignoreCaseInsensitive,
-        requireGit = requireGit,
-    )
+    fun copy(): IgnoreOptions =
+        IgnoreOptions(
+            hidden = hidden,
+            ignore = ignore,
+            parents = parents,
+            gitGlobal = gitGlobal,
+            gitIgnore = gitIgnore,
+            gitExclude = gitExclude,
+            ignoreCaseInsensitive = ignoreCaseInsensitive,
+            requireGit = requireGit,
+        )
 }
 
 /** A compiled collection of ignore matchers active for one directory. */
@@ -82,36 +97,41 @@ class Ignore internal constructor(
     /** Create a new matcher for [path] and return any non-fatal loading error. */
     internal fun addChild(path: String): Pair<Ignore, Error?> {
         var error: Error? = null
+
         fun remember(err: Error?) {
             if (err != null) error = err
         }
 
-        val custom = createGitignore(
-            dir = path,
-            names = customIgnoreFilenames,
-            caseInsensitive = opts.ignoreCaseInsensitive,
-        ).also { remember(it.second) }.first
-        val ignore = if (opts.ignore) {
-            createGitignore(path, listOf(".ignore"), opts.ignoreCaseInsensitive)
-                .also { remember(it.second) }
-                .first
-        } else {
-            Gitignore.empty()
-        }
-        val gitIgnore = if (opts.gitIgnore) {
-            createGitignore(path, listOf(".gitignore"), opts.ignoreCaseInsensitive)
-                .also { remember(it.second) }
-                .first
-        } else {
-            Gitignore.empty()
-        }
-        val gitExclude = if (opts.gitExclude) {
-            createGitignore(joinPath(path, ".git"), listOf("info/exclude"), opts.ignoreCaseInsensitive)
-                .also { remember(it.second) }
-                .first
-        } else {
-            Gitignore.empty()
-        }
+        val custom =
+            createGitignore(
+                dir = path,
+                names = customIgnoreFilenames,
+                caseInsensitive = opts.ignoreCaseInsensitive,
+            ).also { remember(it.second) }.first
+        val ignore =
+            if (opts.ignore) {
+                createGitignore(path, listOf(".ignore"), opts.ignoreCaseInsensitive)
+                    .also { remember(it.second) }
+                    .first
+            } else {
+                Gitignore.empty()
+            }
+        val gitIgnore =
+            if (opts.gitIgnore) {
+                createGitignore(path, listOf(".gitignore"), opts.ignoreCaseInsensitive)
+                    .also { remember(it.second) }
+                    .first
+            } else {
+                Gitignore.empty()
+            }
+        val gitExclude =
+            if (opts.gitExclude) {
+                createGitignore(joinPath(path, ".git"), listOf("info/exclude"), opts.ignoreCaseInsensitive)
+                    .also { remember(it.second) }
+                    .first
+            } else {
+                Gitignore.empty()
+            }
         return Pair(
             Ignore(
                 dir = path,
@@ -182,16 +202,21 @@ class Ignore internal constructor(
             if (!explicit.isNone()) break
             explicit = matcher.matched(path, isDir).map(IgnoreMatch::gitignore)
         }
-        return custom.or(ignore).or(gitIgnore).or(gitExclude).or(explicit)
+        return custom
+            .or(ignore)
+            .or(gitIgnore)
+            .or(gitExclude)
+            .or(explicit)
     }
 
-    private fun parents(): Sequence<Ignore> = sequence {
-        var current: Ignore? = this@Ignore
-        while (current != null) {
-            yield(current)
-            current = current.parent
+    private fun parents(): Sequence<Ignore> =
+        sequence {
+            var current: Ignore? = this@Ignore
+            while (current != null) {
+                yield(current)
+                current = current.parent
+            }
         }
-    }
 
     private fun hasAnyIgnoreRules(): Boolean =
         opts.ignore ||
@@ -278,19 +303,20 @@ class IgnoreBuilder {
     }
 
     fun build(root: String): Ignore {
-        val base = Ignore(
-            dir = currentDir ?: "",
-            overrides = overrides,
-            types = types,
-            explicitIgnores = explicitIgnores.toList(),
-            customIgnoreFilenames = customIgnoreFilenames.toList(),
-            customIgnoreMatcher = Gitignore.empty(),
-            ignoreMatcher = Gitignore.empty(),
-            gitIgnoreMatcher = Gitignore.empty(),
-            gitExcludeMatcher = Gitignore.empty(),
-            hasGit = false,
-            opts = opts.copy(),
-        )
+        val base =
+            Ignore(
+                dir = currentDir ?: "",
+                overrides = overrides,
+                types = types,
+                explicitIgnores = explicitIgnores.toList(),
+                customIgnoreFilenames = customIgnoreFilenames.toList(),
+                customIgnoreMatcher = Gitignore.empty(),
+                ignoreMatcher = Gitignore.empty(),
+                gitIgnoreMatcher = Gitignore.empty(),
+                gitExcludeMatcher = Gitignore.empty(),
+                hasGit = false,
+                opts = opts.copy(),
+            )
         return if (root.isEmpty()) base else base.addChild(root).first
     }
 }

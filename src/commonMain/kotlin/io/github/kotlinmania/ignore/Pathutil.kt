@@ -17,17 +17,13 @@ internal fun isHidden(path: String): Boolean {
  * @param path The path from which the prefix is stripped.
  * @return The remainder after stripping [prefix], or `null` if [path] doesn't
  *   start with [prefix]. */
-internal fun stripPrefix(prefix: String, path: String): String? {
-    return if (path.startsWith(prefix)) path.substring(prefix.length) else null
-}
+internal fun stripPrefix(prefix: String, path: String): String? = if (path.startsWith(prefix)) path.substring(prefix.length) else null
 
 /** Returns true if this file path is just a file name. That is, its parent is
  * the empty string.
  *
  * @param path The file path to inspect. */
-internal fun isFileName(path: String): Boolean {
-    return !path.contains('/') && !path.contains('\\')
-}
+internal fun isFileName(path: String): Boolean = !path.contains('/') && !path.contains('\\')
 
 /** The final component of the path, if it is a normal file.
  *

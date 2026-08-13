@@ -1,15 +1,15 @@
 // port-lint: source walk.rs
 package io.github.kotlinmania.ignore
 
-import kotlin.random.Random
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import io.github.kotlinmania.io.buffered
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
 import io.github.kotlinmania.io.files.SystemTemporaryDirectory
 import io.github.kotlinmania.io.writeString
+import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class WalkTest {
     @Test
@@ -26,14 +26,15 @@ class WalkTest {
 
         try {
             val overrides = OverrideBuilder(root.toString()).add("!*.tmp").build()
-            val paths = WalkBuilder(root.toString())
-                .hidden(true)
-                .overrides(overrides)
-                .build()
-                .mapNotNull { it.getOrNull()?.path() }
-                .map { stripRoot(root.toString(), it) }
-                .filter { it.isNotEmpty() }
-                .sorted()
+            val paths =
+                WalkBuilder(root.toString())
+                    .hidden(true)
+                    .overrides(overrides)
+                    .build()
+                    .mapNotNull { it.getOrNull()?.path() }
+                    .map { stripRoot(root.toString(), it) }
+                    .filter { it.isNotEmpty() }
+                    .sorted()
 
             assertEquals(listOf("src", "src/keep.kt"), paths)
 
@@ -79,14 +80,15 @@ class WalkTest {
         write(gitignore, "*.log")
 
         try {
-            val paths = WalkBuilder(root.toString())
-                .hidden(false)
-                .requireGit(true)
-                .build()
-                .mapNotNull { it.getOrNull()?.path() }
-                .map { stripRoot(root.toString(), it) }
-                .filter { it.isNotEmpty() }
-                .sorted()
+            val paths =
+                WalkBuilder(root.toString())
+                    .hidden(false)
+                    .requireGit(true)
+                    .build()
+                    .mapNotNull { it.getOrNull()?.path() }
+                    .map { stripRoot(root.toString(), it) }
+                    .filter { it.isNotEmpty() }
+                    .sorted()
 
             assertEquals(listOf(".git", ".gitignore", ".ignore", "keep.kt"), paths)
         } finally {

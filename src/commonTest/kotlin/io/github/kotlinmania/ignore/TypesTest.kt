@@ -1,4 +1,4 @@
-// port-lint: source types.rs
+// port-lint: tests types.rs
 package io.github.kotlinmania.ignore
 
 import kotlin.test.Test
@@ -8,102 +8,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TypesTest {
-    @Test
-    fun selectionsAndNegationsFollowPrecedence() {
-        val types =
-            configuredTypes {
-                select("foo")
-                negate("rust")
-            }
-
-        assertTrue(types.matched("main.foo").isWhitelist())
-        assertTrue(types.matched("main.rs").isIgnore())
-        assertTrue(types.matched("index.html").isIgnore())
-    }
-
-    @Test
-    fun emptySelectionDoesNotFilterFiles() {
-        val types = configuredTypes()
-
-        assertTrue(types.matched("index.html").isNone())
-        assertTrue(types.matched("main.rs").isNone())
-    }
-
-    @Test
-    fun includeDefinitionsReuseExistingGlobs() {
-        val types =
-            configuredTypes {
-                select("combo")
-            }
-
-        assertTrue(types.matched("index.html").isWhitelist())
-        assertTrue(types.matched("lib.rs").isWhitelist())
-        assertTrue(types.matched("leftpad.js").isIgnore())
-    }
-
-    @Test
-    fun negatedSelectionIgnoresOnlyItsType() {
-        val types =
-            configuredTypes {
-                negate("rust")
-            }
-
-        assertTrue(types.matched("main.rs").isIgnore())
-        assertTrue(types.matched("index.html").isNone())
-    }
-
-    @Test
-    fun allSelectionExpandsCurrentDefinitions() {
-        val types =
-            configuredTypes {
-                select("all")
-            }
-
-        assertEquals(7, types.len())
-        assertTrue(types.matched("index.htm").isWhitelist())
-        assertTrue(types.matched("main.py").isWhitelist())
-    }
-
-    @Test
-    fun invalidDefinitionsDoNotChangeExistingDefinitions() {
-        val builder = typeBuilder()
-        val original = builder.definitions()
-
-        assertFailsWith<Error.InvalidDefinition> {
-            builder.addDef("combo:include:html,qwerty")
-        }
-        assertFailsWith<Error.InvalidDefinition> {
-            builder.addDef("combo:foobar:html,rust")
-        }
-        assertFailsWith<Error.InvalidDefinition> {
-            builder.addDef("")
-        }
-        assertEquals(original, builder.definitions())
-    }
-
-    @Test
-    fun directoryEntriesDoNotUseFileTypeFilters() {
-        val types =
-            configuredTypes {
-                select("rust")
-            }
-
-        assertFalse(types.matched("lib.rs", isDir = true).isIgnore())
-        assertTrue(types.matched("lib.rs", isDir = true).isNone())
-    }
-
-    private fun configuredTypes(configure: TypesBuilder.() -> Unit = {}): Types =
-        typeBuilder().apply(configure).build()
-
-    private fun typeBuilder(): TypesBuilder {
-        val builder = TypesBuilder()
-        for (definition in typeDefinitions()) {
-            builder.addDef(definition)
-        }
-        return builder
-    }
-
-    private fun typeDefinitions(): List<String> =
+    private fun types(): List<String> =
         listOf(
             "html:*.html",
             "html:*.htm",
@@ -114,4 +19,105 @@ class TypesTest {
             "foo:*.{rs,foo}",
             "combo:include:html,rust",
         )
+
+    private fun checkMatch(
+        typesDefs: List<String>,
+        sel: List<String>,
+        selnot: List<String>,
+        path: String,
+        expectedMatched: Boolean,
+    ) {
+        val btypes = TypesBuilder()
+        for (tydef in typesDefs) {
+            btypes.addDef(tydef)
+        }
+        for (s in sel) {
+            btypes.select(s)
+        }
+        for (sn in selnot) {
+            btypes.negate(sn)
+        }
+        val types = btypes.build()
+        val mat = types.matched(path, false)
+        val isMatched = !mat.isIgnore()
+        assertEquals(expectedMatched, isMatched)
+    }
+
+    @Test
+    fun match1() = checkMatch(types(), listOf("rust"), emptyList(), "lib.rs", true)
+
+    @Test
+    fun match2() = checkMatch(types(), listOf("html"), emptyList(), "index.html", true)
+
+    @Test
+    fun match3() = checkMatch(types(), listOf("html"), emptyList(), "index.htm", true)
+
+    @Test
+    fun match4() = checkMatch(types(), listOf("html", "rust"), emptyList(), "main.rs", true)
+
+    @Test
+    fun match5() = checkMatch(types(), emptyList(), emptyList(), "index.html", true)
+
+    @Test
+    fun match6() = checkMatch(types(), emptyList(), listOf("rust"), "index.html", true)
+
+    @Test
+    fun match7() = checkMatch(types(), listOf("foo"), listOf("rust"), "main.foo", true)
+
+    @Test
+    fun match8() = checkMatch(types(), listOf("combo"), emptyList(), "index.html", true)
+
+    @Test
+    fun match9() = checkMatch(types(), listOf("combo"), emptyList(), "lib.rs", true)
+
+    @Test
+    fun match10() = checkMatch(types(), listOf("py"), emptyList(), "main.py", true)
+
+    @Test
+    fun match11() = checkMatch(types(), listOf("python"), emptyList(), "main.py", true)
+
+    @Test
+    fun matchnot1() = checkMatch(types(), listOf("rust"), emptyList(), "index.html", false)
+
+    @Test
+    fun matchnot2() = checkMatch(types(), emptyList(), listOf("rust"), "main.rs", false)
+
+    @Test
+    fun matchnot3() = checkMatch(types(), listOf("foo"), listOf("rust"), "main.rs", false)
+
+    @Test
+    fun matchnot4() = checkMatch(types(), listOf("rust"), listOf("foo"), "main.rs", false)
+
+    @Test
+    fun matchnot5() = checkMatch(types(), listOf("rust"), listOf("foo"), "main.foo", false)
+
+    @Test
+    fun matchnot6() = checkMatch(types(), listOf("combo"), emptyList(), "leftpad.js", false)
+
+    @Test
+    fun matchnot7() = checkMatch(types(), listOf("py"), emptyList(), "index.html", false)
+
+    @Test
+    fun matchnot8() = checkMatch(types(), listOf("python"), emptyList(), "doc.md", false)
+
+    @Test
+    fun testInvalidDefs() {
+        val btypes = TypesBuilder()
+        for (tydef in types()) {
+            btypes.addDef(tydef)
+        }
+        val originalDefs = btypes.definitions()
+        val badDefs =
+            listOf(
+                "combo:include:html,qwerty",
+                "combo:foobar:html,rust",
+                "",
+            )
+        for (def in badDefs) {
+            assertFailsWith<Error.InvalidDefinition> {
+                btypes.addDef(def)
+            }
+            assertEquals(originalDefs, btypes.definitions())
+        }
+    }
 }

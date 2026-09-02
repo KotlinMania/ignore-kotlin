@@ -5,13 +5,13 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 8/8 (100.0%)
-- **Function parity:** 140/273 matched (target 225) — 51.3%
-- **Class/type parity:** 20/47 matched (target 52) — 42.6%
-- **Combined symbol parity:** 160/320 matched (target 277) — 50.0%
-- **Average inline-code cosine:** 0.44 (function body across 8 matched files)
+- **Function parity:** 155/273 matched (target 316) — 56.8%
+- **Class/type parity:** 20/47 matched (target 53) — 42.6%
+- **Combined symbol parity:** 175/320 matched (target 369) — 54.7%
+- **Average inline-code cosine:** 0.49 (function body across 8 matched files)
 - **Average documentation cosine:** 0.82 (doc text across 8 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 7 files with <0.60 function similarity
+- **Critical Issues:** 6 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -33,9 +33,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Similarity:** 0.17
 - **Dependents:** 0
 - **Priority Score:** 832408.3
-- **Functions:** 37/103 matched (target 43)
+- **Functions:** 37/103 matched (target 46)
 - **Missing functions:** `ino`, `is_dir`, `new_stdin`, `new_walkdir`, `new_raw`, `fmt`, `metadata_internal`, `from_entry`, `from_entry_os`, `from_path`, `sort_by_file_name`, `get_or_set_current_dir`, `skip_entry`, `next`, `from`, `is_continue`, `is_quit`, `visit`, `is_symlink`, `add_parents`, `read_dir`, `new_for_each_thread`, `push`, `pop`, `steal`, `run_one`, `generate_work`, `get_work`, `quit_now`, `is_quit_now`, `send`, `send_quit`, `recv`, `deactivate_worker`, `activate_worker`, `check_symlink_loop`, `skip_filesize`, `should_skip_entry`, `stdout_handle`, `path_equals`, `never_equal`, `walkdir_is_dir`, `is_same_file_system`, `device_num`, `wfile`, `wfile_size`, `symlink`, `mkdirp`, `normal_path`, `walk_collect`, `walk_collect_parallel`, `walk_collect_entries_parallel`, `mkpaths`, `tmpdir`, `assert_paths`, `no_ignores`, `custom_ignore`, `custom_ignore_exclusive_use`, `explicit_ignore`, `explicit_ignore_exclusive_use`, `gitignore_parent`, `symlinks`, `first_path_not_symlink`, `symlink_loop`, `no_read_permissions`, `filter`
-- **Types:** 5/21 matched (target 7)
+- **Types:** 5/21 matched (target 8)
 - **Missing types:** `DirEntryInner`, `DirEntryRaw`, `Sorter`, `Filter`, `Item`, `WalkEventIter`, `WalkEvent`, `ParallelVisitorBuilder`, `ParallelVisitor`, `FnBuilder`, `FnVisitor`, `FnVisitorImp`, `Message`, `Work`, `Stack`, `Worker`
 - **Tests:** 0/22 matched
 
@@ -51,19 +51,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** `IgnoreMatchInner`, `IgnoreInner`, `Parents`, `Item`
 - **Tests:** 0/22 matched
 
-### 3. gitignore
-
-- **Target:** `ignore.Gitignore`
-- **Similarity:** 0.29
-- **Dependents:** 0
-- **Priority Score:** 184407.1
-- **Functions:** 23/41 matched (target 45)
-- **Missing functions:** `build_global`, `add_str`, `gitconfig_excludes_path`, `gitconfig_home_contents`, `gitconfig_xdg_contents`, `excludes_file_default`, `parse_excludes_file`, `expand_tilde`, `home_dir`, `gi_from_str`, `bytes`, `path_string`, `parse_excludes_file1`, `parse_excludes_file2`, `parse_excludes_file3`, `parse_excludes_file4`, `parse_excludes_file5`, `regression_106`
-- **Types:** 3/3 matched (target 6)
-- **Missing types:** _none_
-- **Tests:** 0/10 matched
-
-### 4. lib
+### 3. lib
 
 - **Target:** `ignore.Lib`
 - **Similarity:** 0.47
@@ -75,29 +63,41 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** `Result`, `TempDir`
 - **Tests:** 0/3 matched
 
-### 5. overrides
+### 4. gitignore
 
-- **Target:** `ignore.Overrides`
-- **Similarity:** 0.58
-- **Dependents:** 0
-- **Priority Score:** 82404.2
-- **Functions:** 14/20 matched (target 21)
-- **Missing functions:** `new`, `ov`, `gitignore`, `allow_directories`, `absolute_path`, `default_case_sensitive`
-- **Types:** 2/4 matched
-- **Missing types:** `Glob`, `GlobInner`
-- **Tests:** 3/8 matched
-
-### 6. types
-
-- **Target:** `ignore.Types`
+- **Target:** `ignore.Gitignore`
 - **Similarity:** 0.47
 - **Dependents:** 0
-- **Priority Score:** 62805.3
-- **Functions:** 19/22 matched (target 50)
-- **Missing functions:** `new`, `types`, `test_invalid_defs`
+- **Priority Score:** 84405.3
+- **Functions:** 33/41 matched (target 117)
+- **Missing functions:** `build_global`, `add_str`, `gitconfig_home_contents`, `gitconfig_xdg_contents`, `excludes_file_default`, `gi_from_str`, `bytes`, `path_string`
+- **Types:** 3/3 matched (target 6)
+- **Missing types:** _none_
+- **Tests:** 6/10 matched
+
+### 5. types
+
+- **Target:** `ignore.Types`
+- **Similarity:** 0.52
+- **Dependents:** 0
+- **Priority Score:** 52804.8
+- **Functions:** 20/22 matched (target 62)
+- **Missing functions:** `new`, `types`
 - **Types:** 3/6 matched (target 8)
 - **Missing types:** `Glob`, `GlobInner`, `Selection`
-- **Tests:** 0/2 matched
+- **Tests:** 1/2 matched
+
+### 6. overrides
+
+- **Target:** `ignore.Overrides`
+- **Similarity:** 0.74
+- **Dependents:** 0
+- **Priority Score:** 42402.6
+- **Functions:** 18/20 matched (target 25)
+- **Missing functions:** `new`, `ov`
+- **Types:** 2/4 matched
+- **Missing types:** `Glob`, `GlobInner`
+- **Tests:** 7/8 matched
 
 ### 7. pathutil
 

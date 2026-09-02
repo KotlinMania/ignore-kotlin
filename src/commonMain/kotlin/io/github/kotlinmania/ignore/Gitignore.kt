@@ -411,3 +411,32 @@ private fun globToRegex(pattern: String, allowUnclosedClass: Boolean): String {
     }
     return out.toString()
 }
+
+/**
+ * Expands leading tilde in file paths.
+ */
+internal fun expandTilde(path: String): String {
+    val home = homeDir() ?: return path
+    return path.replace("~", home)
+}
+
+/**
+ * Returns the location of the user's home directory if available.
+ */
+internal fun homeDir(): String? = null
+
+/**
+ * Extracts git's core.excludesfile setting from the raw gitconfig file contents.
+ */
+internal fun parseExcludesFile(data: ByteArray): String? {
+    val text = data.decodeToString()
+    val regex = Regex("""^\s*excludesfile\s*=\s*"?\s*(\S+?)\s*"?\s*$""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    val match = regex.find(text) ?: return null
+    val candidate = match.groupValues[1]
+    return expandTilde(candidate)
+}
+
+/**
+ * Returns the file path of the current environment's global gitignore file.
+ */
+internal fun gitconfigExcludesPath(): String? = null

@@ -1,20 +1,16 @@
 // port-lint: source walk.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.ignore
 
 import io.github.kotlinmania.io.files.FileMetadata
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
-import kotlin.native.HiddenFromObjC
 
 /** A directory entry with a possible error attached. */
-@HiddenFromObjC
 class DirEntry internal constructor(
     private val pathValue: String,
     private val fileTypeValue: IgnoreFileType,
     private val depthValue: Int,
-    private val errorValue: Error? = null,
+    private val errorValue: IgnoreError? = null,
 ) {
     /** The full path that this entry represents. */
     fun path(): String = pathValue
@@ -41,7 +37,7 @@ class DirEntry internal constructor(
     fun depth(): Int = depthValue
 
     /** Returns an error associated with processing this entry, if one exists. */
-    fun error(): Error? = errorValue
+    fun error(): IgnoreError? = errorValue
 
     override fun equals(other: Any?): Boolean =
         other is DirEntry &&
@@ -62,14 +58,12 @@ class DirEntry internal constructor(
 }
 
 /** File type information for a [DirEntry]. */
-@HiddenFromObjC
 data class IgnoreFileType(
     val isDir: Boolean,
     val isFile: Boolean,
 )
 
 /** Metadata for a [DirEntry]. */
-@HiddenFromObjC
 data class IgnoreMetadata(
     val fileType: IgnoreFileType,
     val len: Long,
@@ -78,8 +72,64 @@ data class IgnoreMetadata(
 private fun FileMetadata.toIgnoreMetadata(): IgnoreMetadata =
     IgnoreMetadata(IgnoreFileType(isDirectory, isRegularFile), size)
 
+/** Predicate interface for filtering directory entries. */
+fun interface DirEntryPredicate {
+    fun test(entry: DirEntry): Boolean
+}
+
+/**
+ * Result of walking a directory entry.
+ *
+ * Follows the flat-class shape for Swift Export compatibility.
+ */
+class WalkResult internal constructor(
+    val value: DirEntry?,
+    val error: IgnoreError?,
+) {
+    init {
+        require((value == null) != (error == null)) {
+            "WalkResult must carry exactly one of value or error (got value=$value, error=$error)"
+        }
+    }
+
+    /** Returns the directory entry if successful, or throws [IgnoreException]. */
+    fun getOrThrow(): DirEntry =
+        when {
+            value != null -> value
+            error != null -> throw error.asException()
+            else -> error("WalkResult class invariant violated: both value and error are null")
+        }
+
+    /** Returns the directory entry if successful, or null on error. */
+    fun getOrNull(): DirEntry? = value
+
+    /** Returns true if this result is successful. */
+    fun isSuccess(): Boolean = value != null
+
+    /** Returns true if this result is an error. */
+    fun isFailure(): Boolean = error != null
+
+    override fun equals(other: Any?): Boolean =
+        other is WalkResult && value == other.value && error == other.error
+
+    override fun hashCode(): Int =
+        31 * (value?.hashCode() ?: 0) + (error?.hashCode() ?: 0)
+
+    override fun toString(): String =
+        when {
+            value != null -> "WalkResult.Ok($value)"
+            error != null -> "WalkResult.Err($error)"
+            else -> "WalkResult(invalid)"
+        }
+
+    companion object {
+        internal fun ok(entry: DirEntry): WalkResult = WalkResult(entry, null)
+
+        internal fun err(error: IgnoreError): WalkResult = WalkResult(null, error)
+    }
+}
+
 /** WalkBuilder builds a recursive directory iterator. */
-@HiddenFromObjC
 class WalkBuilder(
     path: String,
 ) {
@@ -91,7 +141,7 @@ class WalkBuilder(
     private var followLinks = false
     private var threads = 0
     private var sorter: Comparator<String>? = null
-    private var filter: ((DirEntry) -> Boolean)? = null
+    private var filter: DirEntryPredicate? = null
 
     /** Build a new [Walk] iterator. */
     fun build(): Walk =
@@ -117,8 +167,9 @@ class WalkBuilder(
     /** The maximum depth to recurse. */
     fun maxDepth(depth: Int?): WalkBuilder {
         maxDepth = depth
-        if (minDepth != null && maxDepth != null && maxDepth!! < minDepth!!) {
-            maxDepth = minDepth
+        val min = minDepth
+        if (min != null && depth != null && depth < min) {
+            maxDepth = min
         }
         return this
     }
@@ -126,8 +177,9 @@ class WalkBuilder(
     /** The minimum depth to recurse. */
     fun minDepth(depth: Int?): WalkBuilder {
         minDepth = depth
-        if (maxDepth != null && minDepth != null && minDepth!! > maxDepth!!) {
-            minDepth = maxDepth
+        val max = maxDepth
+        if (max != null && depth != null && depth > max) {
+            minDepth = max
         }
         return this
     }
@@ -232,7 +284,6 @@ class WalkBuilder(
     }
 
     /** Set a function for sorting directory entries by their path. */
-    @HiddenFromObjC
     fun sortByFilePath(cmp: Comparator<String>): WalkBuilder {
         sorter = cmp
         return this
@@ -245,11 +296,13 @@ class WalkBuilder(
     fun skipStdout(yes: Boolean): WalkBuilder = this
 
     /** Yields only entries which satisfy the given predicate. */
-    @HiddenFromObjC
-    fun filterEntry(filter: (DirEntry) -> Boolean): WalkBuilder {
+    fun filterEntry(filter: DirEntryPredicate): WalkBuilder {
         this.filter = filter
         return this
     }
+
+    /** Yields only entries which satisfy the given predicate lambda. */
+    fun filterEntry(filter: (DirEntry) -> Boolean): WalkBuilder = filterEntry(DirEntryPredicate(filter))
 
     /** Set the current working directory used for matching global gitignores. */
     fun currentDir(cwd: String): WalkBuilder {
@@ -259,7 +312,6 @@ class WalkBuilder(
 }
 
 /** Walk is a recursive directory iterator over file paths in one or more directories. */
-@HiddenFromObjC
 class Walk internal constructor(
     private val paths: List<String>,
     private val ignore: Ignore,
@@ -267,24 +319,24 @@ class Walk internal constructor(
     private val minDepth: Int?,
     private val maxFilesize: Long?,
     private val sorter: Comparator<String>?,
-    private val filter: ((DirEntry) -> Boolean)?,
-) : Iterable<Result<DirEntry>> {
-    override fun iterator(): Iterator<Result<DirEntry>> =
+    private val filter: DirEntryPredicate?,
+) : Iterable<WalkResult> {
+    override fun iterator(): Iterator<WalkResult> =
         paths.asSequence().flatMap { walkPath(it, 0, ignore).asSequence() }.iterator()
 
-    private fun walkPath(path: String, depth: Int, activeIgnore: Ignore): List<Result<DirEntry>> {
+    private fun walkPath(path: String, depth: Int, activeIgnore: Ignore): List<WalkResult> {
         val metadata =
             SystemFileSystem.metadataOrNull(Path(path))
-                ?: return listOf(Result.failure(Error.Io(Exception("No such file or directory: $path"))))
+                ?: return listOf(WalkResult.err(IgnoreError.Io(Exception("No such file or directory: $path"))))
         val entry = DirEntry(path, metadata.toIgnoreMetadata().fileType, depth)
         val minAllows = minDepth?.let { depth >= it } ?: true
-        val output = mutableListOf<Result<DirEntry>>()
+        val output = mutableListOf<WalkResult>()
         val decision = activeIgnore.matchedDirEntry(entry)
         val ignored = depth > 0 && decision.isIgnore()
-        val filtered = filter?.invoke(entry) == false
+        val filtered = filter?.test(entry) == false
         val tooLarge = maxFilesize?.let { !entry.fileType().isDir && metadata.size > it } ?: false
         if (!ignored && !filtered && !tooLarge && minAllows) {
-            output += Result.success(entry)
+            output += WalkResult.ok(entry)
         }
         if (ignored || filtered || !entry.fileType().isDir) return output
         if (maxDepth?.let { depth >= it } == true) return output
@@ -292,7 +344,7 @@ class Walk internal constructor(
             try {
                 SystemFileSystem.list(Path(path)).map { it.toString() }
             } catch (err: Exception) {
-                output += Result.failure(Error.Io(err).withPath(path).withDepth(depth))
+                output += WalkResult.err(IgnoreError.Io(err).withPath(path).withDepth(depth))
                 return output
             }
         val sortedChildren = sorter?.let { childPaths.sortedWith(it) } ?: childPaths
@@ -310,30 +362,47 @@ class Walk internal constructor(
 }
 
 /** WalkState indicates whether walking should continue, skip or quit. */
-@HiddenFromObjC
 enum class WalkState {
     Continue,
     Skip,
     Quit,
 }
 
+/** Visitor interface for parallel directory walking. */
+fun interface WalkVisitor {
+    fun visit(result: WalkResult): WalkState
+}
+
+/** Factory interface for parallel directory visitor creation. */
+fun interface WalkVisitorFactory {
+    fun create(): WalkVisitor
+}
+
 /** A parallel recursive directory iterator facade. */
-@HiddenFromObjC
 class WalkParallel internal constructor(
     private val walk: Walk,
     private val threads: Int,
 ) {
     /** Execute the recursive directory iterator. */
-    @HiddenFromObjC
-    fun run(visitorFactory: () -> (Result<DirEntry>) -> WalkState) {
-        val visitor = visitorFactory()
-        for (entry in walk) {
-            when (visitor(entry)) {
+    fun run(visitorFactory: WalkVisitorFactory) {
+        val visitor = visitorFactory.create()
+        for (result in walk) {
+            when (visitor.visit(result)) {
                 WalkState.Continue,
                 WalkState.Skip,
                 -> Unit
+
                 WalkState.Quit -> return
             }
         }
     }
+
+    /** Execute the recursive directory iterator using a lambda factory. */
+    fun run(visitorFactory: () -> (WalkResult) -> WalkState) =
+        run(
+            WalkVisitorFactory {
+                val fn = visitorFactory()
+                WalkVisitor { fn(it) }
+            },
+        )
 }

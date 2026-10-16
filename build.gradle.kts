@@ -144,6 +144,11 @@ configurations.configureEach {
             ),
         )
     }
+    if (name.contains("androidDeviceTest", ignoreCase = true) ||
+        (name.contains("Android", ignoreCase = true) && name.endsWith("RuntimeClasspath"))
+    ) {
+        exclude(group = "org.jetbrains", module = "annotations")
+    }
 }
 
 // Opt-ins shared across Kotlin targets.
@@ -465,7 +470,11 @@ kotlin {
     // Web
     js {
         configureBenchmarkCompilation()
-        browser()
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
         nodejs()
     }
 
@@ -473,7 +482,11 @@ kotlin {
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         configureBenchmarkCompilation()
-        browser()
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
         nodejs()
     }
 
@@ -1377,6 +1390,20 @@ tasks.register("hostTests") {
     )
 }
 
+// Clean XCFrameworks output directory before assembly to avoid xcodebuild collision
+tasks.matching { it.name.startsWith("assemble") && it.name.endsWith("XCFramework") }.configureEach {
+    doFirst {
+        val xcframeworksDir =
+            layout.buildDirectory
+                .dir("XCFrameworks")
+                .orNull
+                ?.asFile
+        if (xcframeworksDir != null && xcframeworksDir.exists()) {
+            xcframeworksDir.deleteRecursively()
+        }
+    }
+}
+
 // Patch generated SPM Package.swift to include minimum macOS platform for Swift Concurrency
 tasks.matching { it.name.contains("GenerateSPMPackage") }.configureEach {
     doLast {
@@ -1446,6 +1473,7 @@ tasks.register("swiftExportSmokeTest") {
                     "./gradlew",
                     "embedSwiftExportForXcode",
                     "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g",
+                    "-Dorg.gradle.problems.report.enabled=false",
                     "--no-configuration-cache",
                     "--no-daemon",
                     "--console=plain",
@@ -1542,6 +1570,12 @@ val fullTargetBuildTaskNames =
         // cinterop tasks that the per-target Binaries entries above already
         // pull in — no separate add() needed here.
     }
+
+tasks.matching { it.name.startsWith("assemble") && it.name.endsWith("XCFramework") }.configureEach {
+    doFirst {
+        file("${layout.buildDirectory.get()}/XCFrameworks").deleteRecursively()
+    }
+}
 
 tasks.named("build") {
     dependsOn(fullTargetBuildTaskNames)

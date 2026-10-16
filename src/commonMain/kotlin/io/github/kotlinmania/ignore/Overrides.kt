@@ -1,9 +1,5 @@
 // port-lint: source overrides.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.ignore
-
-import kotlin.native.HiddenFromObjC
 
 /**
  * The overrides module provides a way to specify a set of override globs.
@@ -13,7 +9,6 @@ import kotlin.native.HiddenFromObjC
  */
 
 /** Glob represents a single glob in an override matcher. */
-@HiddenFromObjC
 class OverrideGlob internal constructor(
     private val unmatchedIgnore: Boolean,
     private val matchedGlob: Glob?,
@@ -36,7 +31,6 @@ class OverrideGlob internal constructor(
 }
 
 /** Manages a set of overrides provided explicitly by the end user. */
-@HiddenFromObjC
 class Override internal constructor(
     private val gitignore: Gitignore,
 ) {
@@ -69,7 +63,6 @@ class Override internal constructor(
 }
 
 /** Builds a matcher for a set of glob overrides. */
-@HiddenFromObjC
 class OverrideBuilder(
     path: String,
 ) {

@@ -1,13 +1,10 @@
 // port-lint: source gitignore.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.ignore
 
 import io.github.kotlinmania.io.buffered
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
 import io.github.kotlinmania.io.readString
-import kotlin.native.HiddenFromObjC
 
 /**
  * The gitignore module provides a way to match globs from a gitignore file
@@ -18,7 +15,6 @@ import kotlin.native.HiddenFromObjC
  */
 
 /** Glob represents a single glob in a gitignore file. */
-@HiddenFromObjC
 class Glob internal constructor(
     private val fromValue: String?,
     private val originalValue: String,
@@ -65,7 +61,6 @@ class Glob internal constructor(
 }
 
 /** Gitignore is a matcher for the globs in one or more gitignore files in the same directory. */
-@HiddenFromObjC
 class Gitignore internal constructor(
     private val root: String,
     private val globs: List<CompiledIgnoreGlob>,
@@ -132,19 +127,21 @@ class Gitignore internal constructor(
 
     companion object {
         /** Creates a new gitignore matcher from the gitignore file path given. */
-        fun new(gitignorePath: String): Pair<Gitignore, Error?> {
+        fun new(gitignorePath: String): Pair<Gitignore, IgnoreError?> {
             val parent = parentPath(gitignorePath) ?: "/"
             val builder = GitignoreBuilder(parent)
             val error = builder.add(gitignorePath)
             return try {
                 Pair(builder.build(), error)
-            } catch (err: Error) {
-                Pair(empty(), error ?: err)
+            } catch (err: IgnoreException) {
+                Pair(empty(), error ?: err.error)
+            } catch (err: Exception) {
+                Pair(empty(), error ?: IgnoreError.Io(err))
             }
         }
 
         /** Creates a new global gitignore matcher when platform data is available. */
-        fun global(): Pair<Gitignore, Error?> = Pair(empty(), null)
+        fun global(): Pair<Gitignore, IgnoreError?> = Pair(empty(), null)
 
         /** Creates a new empty gitignore matcher that never matches anything. */
         fun empty(): Gitignore = Gitignore("", emptyList())
@@ -152,7 +149,6 @@ class Gitignore internal constructor(
 }
 
 /** Builds a gitignore matcher from lines or explicit glob patterns. */
-@HiddenFromObjC
 class GitignoreBuilder(
     path: String,
 ) {
@@ -189,20 +185,20 @@ class GitignoreBuilder(
     }
 
     /** Add each glob from the file path given. */
-    fun add(path: String): Error? {
+    fun add(path: String): IgnoreError? {
         val contents =
             try {
                 SystemFileSystem.source(Path(path)).buffered().use { source -> source.readString() }
             } catch (err: Exception) {
-                return Error.Io(err).withPath(path)
+                return IgnoreError.Io(err).withPath(path)
             }
-        var error: Error? = null
+        var error: IgnoreError? = null
         for ((index, rawLine) in contents.lines().withIndex()) {
             val line = if (index == 0) rawLine.removePrefix("\uFEFF") else rawLine
             try {
                 addLine(path, line)
-            } catch (err: Error) {
-                error = err.tagged(path, (index + 1).toLong())
+            } catch (err: IgnoreException) {
+                error = err.error.tagged(path, (index + 1).toLong())
             }
         }
         return error
@@ -379,10 +375,12 @@ private fun globToRegex(pattern: String, allowUnclosedClass: Boolean): String {
                     i++
                 }
             }
+
             '?' -> {
                 out.append("[^/]")
                 i++
             }
+
             '\\' -> {
                 if (i + 1 < pattern.length) {
                     out.append(Regex.escape(pattern[i + 1].toString()))
@@ -392,10 +390,11 @@ private fun globToRegex(pattern: String, allowUnclosedClass: Boolean): String {
                     i++
                 }
             }
+
             '[' -> {
                 val end = pattern.indexOf(']', startIndex = i + 1)
                 if (end < 0) {
-                    if (!allowUnclosedClass) throw Error.Glob(pattern, "unclosed character class")
+                    if (!allowUnclosedClass) throw IgnoreError.Glob(pattern, "unclosed character class").asException()
                     out.append(Regex.escape("["))
                     i++
                 } else {
@@ -403,6 +402,7 @@ private fun globToRegex(pattern: String, allowUnclosedClass: Boolean): String {
                     i = end + 1
                 }
             }
+
             else -> {
                 out.append(Regex.escape(c.toString()))
                 i++

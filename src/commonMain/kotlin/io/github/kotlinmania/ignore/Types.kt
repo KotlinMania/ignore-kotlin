@@ -1,12 +1,7 @@
 // port-lint: source types.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.ignore
 
-import kotlin.native.HiddenFromObjC
-
 /** A single file type definition. */
-@HiddenFromObjC
 class FileTypeDef internal constructor(
     private val nameValue: String,
     private val globsValue: List<String>,
@@ -35,7 +30,6 @@ class FileTypeDef internal constructor(
 }
 
 /** Types is a file type matcher. */
-@HiddenFromObjC
 class Types internal constructor(
     private val defs: List<FileTypeDef>,
     private val selections: List<TypeSelection<FileTypeDef>>,
@@ -77,7 +71,6 @@ class Types internal constructor(
 }
 
 /** Information about the file type decision that was made. */
-@HiddenFromObjC
 class FileTypeGlob internal constructor(
     private val def: FileTypeDef?,
 ) {
@@ -134,7 +127,6 @@ internal sealed class TypeSelection<T> {
 }
 
 /** TypesBuilder builds a type matcher from definitions and selections. */
-@HiddenFromObjC
 class TypesBuilder {
     private val types = mutableMapOf<String, FileTypeDef>()
     private val selections = mutableListOf<TypeSelection<Unit>>()
@@ -144,7 +136,7 @@ class TypesBuilder {
         val definitions = definitions()
         val builtSelections = mutableListOf<TypeSelection<FileTypeDef>>()
         for (selection in selections) {
-            val def = types[selection.name()] ?: throw Error.UnrecognizedFileType(selection.name())
+            val def = types[selection.name()] ?: throw IgnoreError.UnrecognizedFileType(selection.name()).asException()
             builtSelections += selection.map { def }
         }
         return Types(definitions, builtSelections)
@@ -202,24 +194,28 @@ class TypesBuilder {
             2 -> {
                 val name = parts[0]
                 val glob = parts[1]
-                if (name.isEmpty() || glob.isEmpty()) throw Error.InvalidDefinition
+                if (name.isEmpty() || glob.isEmpty()) throw IgnoreError.InvalidDefinition.asException()
                 add(name, glob)
             }
+
             3 -> {
                 val name = parts[0]
                 val include = parts[1]
                 val typeNames = parts[2]
                 if (name.isEmpty() || include != "include" || typeNames.isEmpty()) {
-                    throw Error.InvalidDefinition
+                    throw IgnoreError.InvalidDefinition.asException()
                 }
                 val includes = typeNames.split(",")
-                if (includes.any { it !in types }) throw Error.InvalidDefinition
+                if (includes.any { it !in types }) throw IgnoreError.InvalidDefinition.asException()
                 val globs = includes.flatMap { types.getValue(it).globs() }
                 for (glob in globs) {
                     add(name, glob)
                 }
             }
-            else -> throw Error.InvalidDefinition
+
+            else -> {
+                throw IgnoreError.InvalidDefinition.asException()
+            }
         }
         return this
     }
@@ -239,7 +235,7 @@ class TypesBuilder {
 
 private fun validateTypeName(name: String) {
     if (name == "all" || name.any { !it.isLetterOrDigit() }) {
-        throw Error.InvalidDefinition
+        throw IgnoreError.InvalidDefinition.asException()
     }
 }
 

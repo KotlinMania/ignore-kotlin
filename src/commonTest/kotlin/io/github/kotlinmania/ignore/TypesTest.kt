@@ -4,8 +4,6 @@ package io.github.kotlinmania.ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class TypesTest {
     private fun types(): List<String> =
@@ -114,9 +112,11 @@ class TypesTest {
                 "",
             )
         for (def in badDefs) {
-            assertFailsWith<Error.InvalidDefinition> {
-                btypes.addDef(def)
-            }
+            val ex =
+                assertFailsWith<IgnoreException> {
+                    btypes.addDef(def)
+                }
+            assertEquals(IgnoreError.InvalidDefinition, ex.error)
             assertEquals(originalDefs, btypes.definitions())
         }
     }

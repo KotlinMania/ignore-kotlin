@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ignore-kotlin"
+includeBuild("../walkdir-kotlin")

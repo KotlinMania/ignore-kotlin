@@ -1,14 +1,10 @@
 // port-lint: source dir.rs
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.ignore
 
 import io.github.kotlinmania.io.files.Path
 import io.github.kotlinmania.io.files.SystemFileSystem
-import kotlin.native.HiddenFromObjC
 
 /** Information about where an ignore decision came from. */
-@HiddenFromObjC
 class IgnoreMatch internal constructor(
     private val source: IgnoreMatchSource,
 ) {
@@ -42,7 +38,7 @@ internal sealed class IgnoreMatchSource {
         val glob: FileTypeGlob,
     ) : IgnoreMatchSource()
 
-    object Hidden : IgnoreMatchSource()
+    data object Hidden : IgnoreMatchSource()
 }
 
 internal class IgnoreOptions(
@@ -69,7 +65,6 @@ internal class IgnoreOptions(
 }
 
 /** A compiled collection of ignore matchers active for one directory. */
-@HiddenFromObjC
 class Ignore internal constructor(
     private val dir: String,
     private val overrides: Override,
@@ -95,10 +90,10 @@ class Ignore internal constructor(
     internal fun child(path: String): Ignore = addChild(path).first
 
     /** Create a new matcher for [path] and return any non-fatal loading error. */
-    internal fun addChild(path: String): Pair<Ignore, Error?> {
-        var error: Error? = null
+    internal fun addChild(path: String): Pair<Ignore, IgnoreError?> {
+        var error: IgnoreError? = null
 
-        fun remember(err: Error?) {
+        fun remember(err: IgnoreError?) {
             if (err != null) error = err
         }
 
@@ -179,28 +174,29 @@ class Ignore internal constructor(
         var ignore: Match<IgnoreMatch> = Match.None
         var gitIgnore: Match<IgnoreMatch> = Match.None
         var gitExclude: Match<IgnoreMatch> = Match.None
-        val anyGit = !opts.requireGit || parents().any { it.hasGit }
-        var sawGit = false
-        for (matcher in parents()) {
-            if (custom.isNone()) {
-                custom = matcher.customIgnoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+        var matcher: Ignore? = this
+        while (matcher != null) {
+            if (matcher.opts.parents || matcher.isRoot()) {
+                if (custom.isNone()) {
+                    custom = matcher.customIgnoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+                }
+                if (ignore.isNone()) {
+                    ignore = matcher.ignoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+                }
+                if (gitIgnore.isNone() && matcher.hasGit) {
+                    gitIgnore = matcher.gitIgnoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+                }
+                if (gitExclude.isNone() && matcher.hasGit) {
+                    gitExclude = matcher.gitExcludeMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+                }
             }
-            if (ignore.isNone()) {
-                ignore = matcher.ignoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
-            }
-            if (anyGit && !sawGit && gitIgnore.isNone()) {
-                gitIgnore = matcher.gitIgnoreMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
-            }
-            if (anyGit && !sawGit && gitExclude.isNone()) {
-                gitExclude = matcher.gitExcludeMatcher.matched(path, isDir).map(IgnoreMatch::gitignore)
-            }
-            sawGit = sawGit || matcher.hasGit
-            if (!opts.parents) break
+            matcher = matcher.parent()
         }
         var explicit: Match<IgnoreMatch> = Match.None
-        for (matcher in explicitIgnores.asReversed()) {
-            if (!explicit.isNone()) break
-            explicit = matcher.matched(path, isDir).map(IgnoreMatch::gitignore)
+        for (gitIgnoreItem in explicitIgnores) {
+            if (explicit.isNone()) {
+                explicit = gitIgnoreItem.matched(path, isDir).map(IgnoreMatch::gitignore)
+            }
         }
         return custom
             .or(ignore)
@@ -208,15 +204,6 @@ class Ignore internal constructor(
             .or(gitExclude)
             .or(explicit)
     }
-
-    private fun parents(): Sequence<Ignore> =
-        sequence {
-            var current: Ignore? = this@Ignore
-            while (current != null) {
-                yield(current)
-                current = current.parent
-            }
-        }
 
     private fun hasAnyIgnoreRules(): Boolean =
         opts.ignore ||
@@ -228,7 +215,6 @@ class Ignore internal constructor(
 }
 
 /** Builds [Ignore] matchers used by the recursive walkers. */
-@HiddenFromObjC
 class IgnoreBuilder {
     private var overrides: Override = Override.empty()
     private var types: Types = Types.empty()
@@ -305,7 +291,7 @@ class IgnoreBuilder {
     fun build(root: String): Ignore {
         val base =
             Ignore(
-                dir = currentDir ?: "",
+                dir = currentDir.orEmpty(),
                 overrides = overrides,
                 types = types,
                 explicitIgnores = explicitIgnores.toList(),
@@ -325,9 +311,9 @@ private fun createGitignore(
     dir: String,
     names: List<String>,
     caseInsensitive: Boolean,
-): Pair<Gitignore, Error?> {
+): Pair<Gitignore, IgnoreError?> {
     val builder = GitignoreBuilder(dir).caseInsensitive(caseInsensitive)
-    var error: Error? = null
+    var error: IgnoreError? = null
     for (name in names) {
         val path = joinPath(dir, name)
         if (SystemFileSystem.metadataOrNull(Path(path)) != null) {

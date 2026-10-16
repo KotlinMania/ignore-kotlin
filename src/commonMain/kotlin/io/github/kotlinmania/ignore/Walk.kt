@@ -288,17 +288,16 @@ class Walk internal constructor(
         }
         if (ignored || filtered || !entry.fileType().isDir) return output
         if (maxDepth?.let { depth >= it } == true) return output
-        val children =
+        val childPaths =
             try {
                 SystemFileSystem.list(Path(path)).map { it.toString() }
             } catch (err: Exception) {
                 output += Result.failure(Error.Io(err).withPath(path).withDepth(depth))
                 return output
-            }.let { childPaths ->
-                sorter?.let { childPaths.sortedWith(it) } ?: childPaths
             }
+        val sortedChildren = sorter?.let { childPaths.sortedWith(it) } ?: childPaths
         val childIgnore = activeIgnore.child(path)
-        for (child in children) {
+        for (child in sortedChildren) {
             output += walkPath(child, depth + 1, childIgnore)
         }
         return output

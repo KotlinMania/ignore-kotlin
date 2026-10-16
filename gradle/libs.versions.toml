@@ -13,7 +13,6 @@ globset = "0.1.3"
 winapiUtil = "0.1.0"
 log = "0.1.5"
 kmIo = "0.1.5"
-walkdir = "0.1.0"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -35,7 +34,6 @@ globset-kotlin = { module = "io.github.kotlinmania:globset-kotlin", version.ref 
 winapi-util-kotlin = { module = "io.github.kotlinmania:winapi-util-kotlin", version.ref = "winapiUtil" }
 log-kotlin = { module = "io.github.kotlinmania:log-kotlin", version.ref = "log" }
 km-io = { module = "io.github.kotlinmania:km-io", version.ref = "kmIo" }
-walkdir-kotlin = { module = "io.github.kotlinmania:walkdir-kotlin", version.ref = "walkdir" }
 
 [bundles]
 ignore-kotlin-commonMain = [
@@ -48,5 +46,4 @@ ignore-kotlin-commonMain = [
   "winapi-util-kotlin",
   "log-kotlin",
   "km-io",
-  "walkdir-kotlin",
 ]

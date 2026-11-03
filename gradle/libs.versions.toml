@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
@@ -15,6 +15,7 @@ log = "0.1.5"
 kmIo = "0.1.5"
 
 [plugins]
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-kmp = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
@@ -38,8 +39,6 @@ km-io = { module = "io.github.kotlinmania:km-io", version.ref = "kmIo" }
 [bundles]
 ignore-kotlin-commonMain = [
   "kotlinx-coroutines-core",
-  "kotlinx-serialization-core",
-  "kotlinx-serialization-json",
   "kotlinx-datetime",
   "collections-immutable",
   "globset-kotlin",

@@ -14,6 +14,8 @@ winapiUtil = "0.1.0"
 log = "0.1.5"
 kmIo = "0.4.0"
 
+androidxTestRunner = "1.7.0"
+
 [plugins]
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -35,6 +37,8 @@ globset-kotlin = { module = "io.github.kotlinmania:globset-kotlin", version.ref 
 winapi-util-kotlin = { module = "io.github.kotlinmania:winapi-util-kotlin", version.ref = "winapiUtil" }
 log-kotlin = { module = "io.github.kotlinmania:log-kotlin", version.ref = "log" }
 km-io = { module = "io.github.kotlinmania:km-io", version.ref = "kmIo" }
+
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 
 [bundles]
 ignore-kotlin-commonMain = [

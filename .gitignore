@@ -95,3 +95,6 @@ direct-translation/
 **/.build/
 !**/native/node-*/package-lock.json
 !**/src/js/node-*/**/package-lock.json
+
+# Local developer caches and transient artifacts
+/.android/
